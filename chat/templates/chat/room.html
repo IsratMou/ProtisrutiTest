@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title %}Chat Room{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Chat with {{ other_user.get_full_name }}</h2>
+    <div class="card">
+        <div class="card-header">
+            <h5>Conversation</h5>
+        </div>
+        <div class="card-body" id="chat-messages" style="height: 400px; overflow-y: scroll;">
+            <!-- Messages will be loaded here via JavaScript -->
+        </div>
+        <div class="card-footer">
+            <form id="message-form">
+                <input type="hidden" id="room-id" value="{{ room.id }}">
+                <div class="input-group">
+                    <input type="text" class="form-control" id="message-input" placeholder="Type your message...">
+                    <button class="btn btn-primary" type="submit">Send</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const roomId = document.getElementById('room-id').value;
+    const messageContainer = document.getElementById('chat-messages');
+    const messageForm = document.getElementById('message-form');
+    const messageInput = document.getElementById('message-input');
+    
+    // Function to load messages
+    function loadMessages() {
+        fetch(`/chat/api/messages/${roomId}/`)
+            .then(response => response.json())
+            .then(data => {
+                messageContainer.innerHTML = '';
+                data.messages.forEach(msg => {
+                    const messageDiv = document.createElement('div');
+                    messageDiv.className = msg.is_me ? 'text-end mb-2' : 'text-start mb-2';
+                    messageDiv.innerHTML = `
+                        <div class="${msg.is_me ? 'bg-primary text-white' : 'bg-light'} p-2 rounded d-inline-block">
+                            <div>${msg.content}</div>
+                            <small class="text-muted">${msg.timestamp}</small>
+                        </div>
+                    `;
+                    messageContainer.appendChild(messageDiv);
+                });
+                messageContainer.scrollTop = messageContainer.scrollHeight;
+            });
+    }
+    
+    // Load messages initially and every 3 seconds
+    loadMessages();
+    setInterval(loadMessages, 3000);
+    
+    // Handle message submission
+    messageForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const content = messageInput.value.trim();
+        if (content) {
+            fetch('/chat/api/send/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: `room_id=${roomId}&content=${encodeURIComponent(content)}`
+            }).then(() => {
+                messageInput.value = '';
+                loadMessages();
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

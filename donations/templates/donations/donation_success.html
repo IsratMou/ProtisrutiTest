@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block title %}Donation Successful{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="alert alert-success text-center">
+        <h2>Thank You for Your Donation!</h2>
+        <p>Your contribution will help support rape victims in Bangladesh.</p>
+        <a href="{% url 'home' %}" class="btn btn-primary">Return Home</a>
+    </div>
+</div>
+{% endblock %}
